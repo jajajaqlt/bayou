@@ -82,54 +82,57 @@ public class Visitor extends ASTVisitor {
         classes.addAll(Arrays.asList(clazz.getTypes()));
         classes.add(clazz);
 
-        for (TypeDeclaration cls : classes)
-            allMethods.addAll(Arrays.asList(cls.getMethods()));
-        List<MethodDeclaration> constructors = allMethods.stream().filter(m -> m.isConstructor()).collect(Collectors.toList());
-        List<MethodDeclaration> publicMethods = allMethods.stream().filter(m -> !m.isConstructor() && Modifier.isPublic(m.getModifiers())).collect(Collectors.toList());
-
         // synchronized lists
         List<DSubTree> asts = new ArrayList<>();
         List<String> javaDocs = new ArrayList<>();
         List<String> methodNames = new ArrayList<>();
 
-        if (!constructors.isEmpty() && !publicMethods.isEmpty()) {
-            for (MethodDeclaration c : constructors)
-                for (MethodDeclaration m : publicMethods) {
-                    String javadoc = Utils.getJavadoc(m, options.JAVADOC_TYPE);
+        for (TypeDeclaration cls : classes) {
+//            List<MethodDeclaration> allMethods = new ArrayList<>();
+            allMethods = new ArrayList<>();
+            allMethods.addAll(Arrays.asList(cls.getMethods()));
+            List<MethodDeclaration> constructors = allMethods.stream().filter(m -> m.isConstructor()).collect(Collectors.toList());
+            List<MethodDeclaration> publicMethods = allMethods.stream().filter(m -> !m.isConstructor() && Modifier.isPublic(m.getModifiers())).collect(Collectors.toList());
+
+            if (!constructors.isEmpty() && !publicMethods.isEmpty()) {
+                for (MethodDeclaration c : constructors)
+                    for (MethodDeclaration m : publicMethods) {
+                        String javadoc = Utils.getJavadoc(m, options.JAVADOC_TYPE);
+                        callStack.push(c);
+                        DSubTree ast = new DOMMethodDeclaration(c, this).handle();
+                        callStack.push(m);
+                        ast.addNodes(new DOMMethodDeclaration(m, this).handle().getNodes());
+                        callStack.pop();
+                        callStack.pop();
+                        if (ast.isValid()) {
+                            asts.add(ast);
+                            javaDocs.add(javadoc);
+                            methodNames.add(m.getName().getIdentifier() + "@" + getLineNumber(m));
+                        }
+                    }
+            } else if (!constructors.isEmpty()) { // no public methods, only constructor
+                for (MethodDeclaration c : constructors) {
+                    String javadoc = Utils.getJavadoc(c, options.JAVADOC_TYPE);
                     callStack.push(c);
                     DSubTree ast = new DOMMethodDeclaration(c, this).handle();
-                    callStack.push(m);
-                    ast.addNodes(new DOMMethodDeclaration(m, this).handle().getNodes());
                     callStack.pop();
+                    if (ast.isValid()) {
+                        asts.add(ast);
+                        javaDocs.add(javadoc);
+                        methodNames.add(c.getName().getIdentifier() + "@" + getLineNumber(c));
+                    }
+                }
+            } else if (!publicMethods.isEmpty()) { // no constructors, methods executed typically through Android callbacks
+                for (MethodDeclaration m : publicMethods) {
+                    String javadoc = Utils.getJavadoc(m, options.JAVADOC_TYPE);
+                    callStack.push(m);
+                    DSubTree ast = new DOMMethodDeclaration(m, this).handle();
                     callStack.pop();
                     if (ast.isValid()) {
                         asts.add(ast);
                         javaDocs.add(javadoc);
                         methodNames.add(m.getName().getIdentifier() + "@" + getLineNumber(m));
                     }
-                }
-        } else if (!constructors.isEmpty()) { // no public methods, only constructor
-            for (MethodDeclaration c : constructors) {
-                String javadoc = Utils.getJavadoc(c, options.JAVADOC_TYPE);
-                callStack.push(c);
-                DSubTree ast = new DOMMethodDeclaration(c, this).handle();
-                callStack.pop();
-                if (ast.isValid()) {
-                    asts.add(ast);
-                    javaDocs.add(javadoc);
-                    methodNames.add(c.getName().getIdentifier() + "@" + getLineNumber(c));
-                }
-            }
-        } else if (!publicMethods.isEmpty()) { // no constructors, methods executed typically through Android callbacks
-            for (MethodDeclaration m : publicMethods) {
-                String javadoc = Utils.getJavadoc(m, options.JAVADOC_TYPE);
-                callStack.push(m);
-                DSubTree ast = new DOMMethodDeclaration(m, this).handle();
-                callStack.pop();
-                if (ast.isValid()) {
-                    asts.add(ast);
-                    javaDocs.add(javadoc);
-                    methodNames.add(m.getName().getIdentifier() + "@" + getLineNumber(m));
                 }
             }
         }
