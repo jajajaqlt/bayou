@@ -173,4 +173,5 @@ if __name__ == '__main__':
     parser.add_argument('--top', type=int, default=10,
                         help='plot only the top-k labels')
     clargs = parser.parse_args()
+    # add test printout here
     plot(clargs)
