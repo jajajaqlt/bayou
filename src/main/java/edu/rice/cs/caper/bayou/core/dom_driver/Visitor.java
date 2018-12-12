@@ -107,10 +107,12 @@ public class Visitor extends ASTVisitor {
                         if (ast.isValid()) {
                             asts.add(ast);
                             javaDocs.add(javadoc);
-                            methodNames.add(m.getName().getIdentifier() + "@" + getLineNumber(m));
+                            methodNames.add(m.getName().getIdentifier() + "@@@" + getLineNumber(m));
                         }
                     }
-            } else if (!constructors.isEmpty()) { // no public methods, only constructor
+            }
+// else
+            if (!constructors.isEmpty()) { // no public methods, only constructor
                 for (MethodDeclaration c : constructors) {
                     String javadoc = Utils.getJavadoc(c, options.JAVADOC_TYPE);
                     callStack.push(c);
@@ -119,10 +121,12 @@ public class Visitor extends ASTVisitor {
                     if (ast.isValid()) {
                         asts.add(ast);
                         javaDocs.add(javadoc);
-                        methodNames.add(c.getName().getIdentifier() + "@" + getLineNumber(c));
+                        methodNames.add(c.getName().getIdentifier() + "@@" + getLineNumber(c));
                     }
                 }
-            } else if (!publicMethods.isEmpty()) { // no constructors, methods executed typically through Android callbacks
+            }
+//            else
+            if (!publicMethods.isEmpty()) { // no constructors, methods executed typically through Android callbacks
                 for (MethodDeclaration m : publicMethods) {
                     String javadoc = Utils.getJavadoc(m, options.JAVADOC_TYPE);
                     callStack.push(m);
