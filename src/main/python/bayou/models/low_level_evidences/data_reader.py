@@ -48,6 +48,8 @@ class Reader():
         for i in range(len(raw_evidences)):
             raw_evidences[i] = raw_evidences[i][:sz]
         raw_targets = raw_targets[:sz]
+        # move the random shuffle and fix the bug
+        random.shuffle(raw_targets)
 
         # setup input and target chars/vocab
         if clargs.continue_from is None:
@@ -205,7 +207,7 @@ class Reader():
         print('{:8d} data points total'.format(len(data_points)))
 
         # randomly shuffle to avoid bias towards initial data points during training
-        random.shuffle(data_points)
+        # random.shuffle(data_points)
         evidences, targets = zip(*data_points)
 
         # save callmap if save location is given
